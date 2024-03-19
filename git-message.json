@@ -1,0 +1,17 @@
+{
+    "ai": {
+        "openAI": {
+            "model": "gpt-3.5-turbo"
+        }
+    },
+    "ticket": {
+        "jira": {
+            "host": "arenaim",
+            "prefix": "RT"
+        }
+    },
+    "instructions": [
+        "Must add a emoji as prefix to the message following the gitmoji standard.",
+        "The whole message must be in lowercase."
+    ]
+}

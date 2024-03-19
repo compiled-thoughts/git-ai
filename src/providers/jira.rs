@@ -21,7 +21,8 @@ pub async fn get_ticket(id: String, configuration: &JiraConfiguration) -> Result
         configuration.host, id
     );
 
-    let authorization = env::var("GMA_JIRA_AUTHORIZATION").expect("Environment `JIRA_TOKEN`");
+    let authorization =
+        env::var("GA_JIRA_AUTHORIZATION").expect("Environment variable `JIRA_AUTHORIZATION`");
 
     let client = Client::builder().cookie_store(true).build().unwrap();
     let mut headers = HeaderMap::new();

@@ -1,4 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Input, Select, Confirm};
 
 use crate::{ai::AIConfiguration, providers::TicketProviderConfiguration, Configuration};
 
@@ -16,6 +16,10 @@ pub fn generate(configuration: &Configuration) -> String {
     }
 
     prompt.interact_text().unwrap()
+}
+
+pub fn create(configuration: &Configuration) {
+
 }
 
 pub fn initiate() {
@@ -78,11 +82,11 @@ pub fn initiate() {
         _ => panic!("Ticket provider not found!"),
     }
 
-    let mut instructions = vec![];
+    let mut commit_instructions = vec![];
 
     loop {
         let last_instruction: String = Input::with_theme(&binding)
-            .with_prompt("📐 What are the instructions for the AI (to finish keep empty):")
+            .with_prompt("📐 What are the instructions for the AI generate the commit message? Type one and press `Enter` to finish keep empty:")
             .allow_empty(true)
             .interact_text()
             .unwrap();
@@ -91,13 +95,52 @@ pub fn initiate() {
             break;
         }
 
-        instructions.push(last_instruction);
+        commit_instructions.push(last_instruction);
+    }
+
+    let use_pull_request_creation = Confirm::with_theme(&binding)
+        .with_prompt("⤴️ Would you like to use the feature to create pull request?")
+        .default(true)
+        .interact()
+        .unwrap();
+
+    let mut vcs = None;
+    let mut pull_request_instructions = None;
+
+    if use_pull_request_creation {
+        let vcs_index = Select::with_theme(&binding)
+            .with_prompt("🔀 Choose your version control system:")
+            .items(&crate::vcs::AVAILABLE_VCS[..])
+            .default(0)
+            .interact()
+            .unwrap();
+
+        vcs = crate::vcs::VCSConfiguration::from_index(vcs_index);
+        let mut instructions = vec![];
+
+        loop {
+            let last_instruction: String = Input::with_theme(&binding)
+                .with_prompt("📐 What are the instructions for the AI generate the Pull Request? Type one and press `Enter` to finish keep empty:")
+                .allow_empty(true)
+                .interact_text()
+                .unwrap();
+    
+            if last_instruction.is_empty() {
+                break;
+            }
+    
+            instructions.push(last_instruction);
+        }
+
+        pull_request_instructions = Some(instructions);
     }
 
     let configuration = Configuration {
         ai,
+        vcs,
         ticket,
-        instructions,
+        commit_instructions,
+        pull_request_instructions,
     };
 
     configuration.save()

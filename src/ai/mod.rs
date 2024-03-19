@@ -4,12 +4,6 @@ pub mod open_ai;
 
 use crate::providers::Ticket;
 
-pub struct MessagePayload {
-    pub diff: String,
-    pub ticket: Ticket,
-    pub instructions: Vec<String>,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AIConfiguration {
@@ -25,18 +19,12 @@ pub async fn generate_message(
 ) -> Result<serde_json::Value, reqwest::Error> {
     match &configuration.ai {
         AIConfiguration::OpenAI(open_ai_configuration) => {
-            let message = open_ai::generate_message(
-                MessagePayload {
-                    ticket,
-                    diff,
-                    instructions: configuration.instructions.clone(),
-                },
-                open_ai_configuration,
-            )
-            .await?;
+            let commit_payload =
+                open_ai::get_prompt_for_commit(diff, ticket, configuration.commit_instructions);
+
+            let message = open_ai::generate_message(commit_payload, open_ai_configuration).await?;
 
             Ok(message)
-        }
-        // _ => { unreachable!("AI not found!") },
+        } // _ => { unreachable!("AI not found!") },
     }
 }

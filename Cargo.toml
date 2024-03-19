@@ -1,5 +1,5 @@
 [package]
-name = "git-message-ai"
+name = "git-ai"
 version = "0.1.0"
 edition = "2021"
 

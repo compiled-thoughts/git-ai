@@ -1,38 +1,13 @@
-use std::path::Path;
-
 use reqwest::Error;
-use serde::{Deserialize, Serialize};
-use std::fs;
 
 mod ai;
 mod cli;
+mod configuration;
 mod git;
 mod providers;
+mod vcs;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Configuration {
-    ai: ai::AIConfiguration,
-    ticket: providers::TicketProviderConfiguration,
-    instructions: Vec<String>,
-}
-
-impl Configuration {
-    pub fn save(&self) {
-        let configuration_file_path = Path::new("./git-message.json");
-        let _ = fs::write(
-            configuration_file_path,
-            serde_json::to_string_pretty(&self).unwrap(),
-        );
-    }
-
-    pub fn read() -> Configuration {
-        let configuration_file_path = Path::new("./git-message.json");
-        let file = fs::read_to_string(configuration_file_path).expect("Failed to read configuration");
-    
-        serde_json::from_str(&file).unwrap()
-    }
-}
+use configuration::Configuration;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -41,7 +16,7 @@ async fn main() -> Result<(), Error> {
     match matches.subcommand() {
         Some(("generate", sub_matches)) => {
             let configuration = Configuration::read();
-        
+
             let (diff, ticket_id) = tokio::join!(
                 git::get_diff(),
                 cli::get_ticket_id(&sub_matches, &configuration)
@@ -51,14 +26,27 @@ async fn main() -> Result<(), Error> {
 
             let message = ai::generate_message(configuration, ticket, diff.unwrap()).await?;
 
+            // git::write_message(message);
             println!("{:#?}", message);
+        }
+        Some(("create", _)) => {
+            let configuration = Configuration::read();
+
+            let payload = vcs::PullRequestPayload {
+                title: String::from(""),
+                body: String::from(""),
+            };
+
+            vcs::create_pull_requet(configuration, payload);
+
+            println!("✅ Pull request created with success!");
         }
         Some(("initiate", _)) => {
             cli::interactive::initiate();
-            
+
             println!("✅ Configuration saved with success!");
-        },
-        _ => panic!("command not found! Please try using --help"),
+        }
+        _ => panic!("❌ Command not found! Please try using --help"),
     }
 
     Ok(())

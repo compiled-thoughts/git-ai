@@ -1,6 +1,8 @@
-# git-message-ai: Generate commit messages automatically
+# 🧠 git-ai
 
-`git-message-ai` cli to generate your commit messages based on code changes and a ticket / task.
+The **git-ai** generates commit messages and pull requests automatically based on your tasks and file changes.
+
+This project is a CLI developed in Rust which can be called using `git-ai` cli to generate your commit messages based on code changes and a ticket / task.
 
 [TODO] Adicionar gif
 
@@ -13,7 +15,7 @@
 1. It will create a local configuration file
 
 ```bash
-git-message-ai initiate
+git-ai initiate
 ```
 
 2. Declare these envinroment varibles:
@@ -29,13 +31,13 @@ GMA_OPENAI_TOKEN=<you can get it here: https://platform.openai.com/api-keys>
 ## Usage
 
 ```bash
-git-message-ai generate [ticket-id]
+git-ai generate [ticket-id]
 ```
 
 or if you prefer using interactive mode:
 
 ```bash
-git-message-ai generate -i
+git-ai generate -i
 ```
 
 ## Available Options
@@ -46,11 +48,11 @@ git-message-ai generate -i
 | `initiate` or `-i` | Initializes the configuration                   | none                                              |
 
 ```bash
-git-message-ai --help  
+git-ai --help  
 
 A CLI to generate your git messages!
 
-Usage: git-message-ai [COMMAND]
+Usage: git-ai [COMMAND]
 
 Commands:
   generate, -g, --generate  Generates a message with predefined arguments

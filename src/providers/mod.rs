@@ -25,6 +25,6 @@ pub async fn get_ticket(
         TicketProviderConfiguration::JIRA(jira) => {
             let payload = jira::get_ticket(ticket_id, &jira).await?;
             Ok(jira::get_fields(payload))
-        } // _ => { unreachable!("Ticket provider not found!"); },
+        }
     }
 }
