@@ -6,11 +6,12 @@ pub fn run() -> Command {
     Command::new("git-message-ai")
         .about("A CLI to generate your git messages!")
         .author("codermarcos")
+        .arg_required_else_help(true)
         .subcommand(
             Command::new("generate")
                 .about("Generates a message with predefined arguments")
                 .long_about(
-                    "This command generates a message with predefined arguments. The ticket id is required.",
+                    "This command generates a message with predefined arguments. The ticket id is not required.",
                 )
                 .short_flag('g')
                 .long_flag("generate")
@@ -20,8 +21,8 @@ pub fn run() -> Command {
                     Arg::new("ticket-id")
                         .short('t')
                         .long("ticket-id")
-                        .value_name("RT-666")
-                        .required(true)
+                        .value_name("RT-42")
+                        .required(false)
                         .help("What is the ticket id")
                         .long_help(
                             "This ticket will be read to improve the commit message",

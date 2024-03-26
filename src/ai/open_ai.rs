@@ -14,12 +14,21 @@ pub struct OpenAIConfiguration {
     pub model: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ChatMessage {
+    role: String,
+    content: String,
+}
+
 pub async fn generate_message(
     payload: MessagePayload,
     configuration: &OpenAIConfiguration,
 ) -> Result<Value, Error> {
     let url = "https://api.openai.com/v1/chat/completions";
-    let token = format!("Bearer {}", env::var("GMA_OPENAI_TOKEN").expect("Environment `OPENAI_TOKEN`"));
+    let token = format!(
+        "Bearer {}",
+        env::var("GMA_OPENAI_TOKEN").expect("Environment `GMA_OPENAI_TOKEN`")
+    );
 
     let model = &configuration.model;
 
@@ -31,37 +40,55 @@ pub async fn generate_message(
         HeaderValue::from_str("application/json").unwrap(),
     );
 
+    let mut messages: Vec<ChatMessage> = vec![
+        ChatMessage {
+            role: String::from("system"),
+            content: String::from(
+                r#"You are a git message generator which receives the user input and output a great message
+        following the patterns provided by the user input considering these contexts:
+  the git diff of the commits and the related task or ticket.
+  "#,
+            ),
+        },
+        ChatMessage {
+            role: "user".to_string(),
+            content: format!(
+                "Follow this pattern as strict as prossible:\n* {}",
+                payload.instructions.join("\n * ")
+            ),
+        },
+        ChatMessage {
+            role: "user".to_string(),
+            content: format!(
+                r#"
+        Based on the following git commit diff, generate a beautiful and compreensive
+        git commit message following the Semantic Commit format and using emojis whenever you need.
+        You should not include any content on your response, only the commit contet ready to be used.
+
+```
+{}
+```
+
+        The commit message should pass in the Semantic Commit format validation.
+            \n\n"#,
+                payload.diff,
+            ),
+        },
+    ];
+    match &payload.ticket {
+        Some(ticket) => messages.push(ChatMessage {
+            role: "user".to_string(),
+            content: format!(
+                "Task title: {}\nTask description: {}\n",
+                ticket.title, ticket.description,
+            ),
+        }),
+        None => {}
+    }
     let json_body = serde_json::json!({
         "model": model,
         "temperature": 0.2,
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a very git message generator which receives the user input and output a great message following the patterns provided by the user input considering these contexts the diff of the commits and the related task or ticket."
-            },
-            {
-                "role": "user",
-                "content": format!(
-                    "Follow this pattern as strict as prossible:\n* {}",
-                    payload.instructions.join("\n * ")
-                )
-            },
-            {
-                "role": "user",
-                "content": format!(
-                    "Task title: {}\nTask description: {}\n",
-                    payload.ticket.title,
-                    payload.ticket.description,
-                )
-            },
-            {
-                "role": "user",
-                "content": format!(
-                    "Git diff: {}",
-                    payload.diff,
-                )
-            }
-        ]
+        "messages": messages
     });
 
     let response = client
