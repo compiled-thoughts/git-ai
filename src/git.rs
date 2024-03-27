@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 use tokio::process::Command;
 pub async fn get_diff() -> Result<String, std::io::Error> {
     let output = Command::new("git")
-        .args(["diff", "--cached"])
+        .args(["status", "-v"])
         .output()
         .await?;
 

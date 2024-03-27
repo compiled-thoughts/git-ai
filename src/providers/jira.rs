@@ -15,7 +15,13 @@ pub struct JiraConfiguration {
     pub prefix: Option<String>,
 }
 
-pub async fn get_ticket(id: String, configuration: &JiraConfiguration) -> Result<Value, Error> {
+pub async fn get_ticket(
+    id: String,
+    configuration: &JiraConfiguration,
+) -> Result<Option<Value>, Error> {
+    if id.is_empty() {
+        return Ok(None);
+    }
     let url = format!(
         "https://{}.atlassian.net/rest/api/2/issue/{}",
         configuration.host, id
@@ -34,28 +40,33 @@ pub async fn get_ticket(id: String, configuration: &JiraConfiguration) -> Result
     let response = client.get(url).headers(headers).send().await;
 
     match response {
-        Ok(r) => r.json::<Value>().await,
+        Ok(r) => Ok(Some((r.json::<Value>().await).unwrap())),
         Err(e) => {
             println!("ERROR: Getting JIRA Issue {}", e.to_string());
-            Ok(Value::Null)
+            Ok(Some(Value::Null))
         }
     }
 }
 
-pub fn get_fields(ticket: Value) -> Ticket {
+pub fn get_fields(ticket: Option<Value>) -> Ticket {
     let mut fields = Ticket {
         title: String::new(),
         description: String::new(),
     };
 
-    if let Some(ticket_fields) = ticket.get("fields") {
-        if let Some(description) = ticket_fields.get("description") {
-            fields.description = description.as_str().unwrap().to_string();
-        }
+    match ticket {
+        Some(value) => {
+            if let Some(ticket_fields) = value.get("fields") {
+                if let Some(description) = ticket_fields.get("description") {
+                    fields.description = description.as_str().unwrap().to_string();
+                }
 
-        if let Some(summary) = ticket_fields.get("summary") {
-            fields.title = summary.as_str().unwrap().to_string();
-        }
+                if let Some(summary) = ticket_fields.get("summary") {
+                    fields.title = summary.as_str().unwrap().to_string();
+                }
+            }
+        },
+        None => {}
     }
 
     fields
