@@ -14,14 +14,20 @@ pub struct OpenAIConfiguration {
     pub model: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ChatMessage {
+    role: &str,
+    content: String,
+}
+
 pub async fn generate_message(
-    prompt: serde_json::Value,
+    messages: serde_json::Value,
     configuration: &OpenAIConfiguration,
 ) -> Result<Value, Error> {
     let url = "https://api.openai.com/v1/chat/completions";
     let token = format!(
         "Bearer {}",
-        env::var("GA_OPENAI_TOKEN").expect("Environment variable `OPENAI_TOKEN`")
+        env::var("GA_OPENAI_TOKEN").expect("Environment variable `GA_OPENAI_TOKEN`")
     );
 
     let model = &configuration.model;
@@ -37,7 +43,7 @@ pub async fn generate_message(
     let json_body = serde_json::json!({
         "model": model,
         "temperature": 0.2,
-        "messages": prompt,
+        "messages": messages,
     });
 
     let response = client
@@ -58,35 +64,56 @@ pub async fn generate_message(
 
 pub fn get_prompt_for_commit(
     diff: String,
-    ticket: Ticket,
+    ticket: Option<Ticket>,
     commit_instructions: Vec<String>,
 ) -> serde_json::Value {
-    serde_json::json!([
-        {
-            "role": "system",
-            "content": "You are a very git message generator which receives the user input and output a great message following the patterns provided by the user input considering these contexts the diff of the commits and the related task or ticket."
+    let mut messages: Vec<ChatMessage> = vec![
+        ChatMessage {
+            role: "system",
+            content: String::from(
+                "You should act as a senios software developer \
+                that will generate git commit messages following the semantic commit \
+                convention to generate beautiful commit message that if easy to read. \
+                Whenever you receive a Ticket information, you should use these information \
+                to help contextualize the updates you will receive on git diff. \
+                You should use emojis whenever it is usefull to help the developers \
+                understand what was implemented in the git diff. You should take care of \
+                not violate the semantic commit rules when use emojis. You should not \
+                include any extra content on your response, only the final commit message \
+                ready to be included on a git commit.",
+            ),
         },
-        {
-            "role": "user",
-            "content": format!(
-                "Follow this pattern as strict as prossible:\n* {}",
-                commit_instructions.join("\n * ")
-            )
-        },
-        {
-            "role": "user",
-            "content": format!(
-                "Task title: {}\nTask description: {}\n",
-                ticket.title,
-                ticket.description,
-            )
-        },
-        {
-            "role": "user",
-            "content": format!(
-                "Git diff: {}",
+        ChatMessage {
+            role: "user",
+            content: format!(
+                "This is the git diff:\n \
+                ```\n\
+                {}\n\
+                ```",
                 diff,
-            )
-        }
-    ])
+            ),
+        },
+    ];
+
+    if commit_instructions.len() > 0 {
+        messages.push(ChatMessage {
+            role: "user",
+            content: format!(
+                "Follow the following instruction as much as possible:\n* {}",
+                commit_instructions.join("* \n")
+            ),
+        })
+    }
+
+    if let Some(ticket) = &ticket {
+        messages.push(ChatMessage {
+            role: "user",
+            content: format!(
+                "Ticket title: {}\nTicket description: {}\n",
+                ticket.title, ticket.description,
+            ),
+        })
+    }
+
+    serde_json::json!(messages)
 }

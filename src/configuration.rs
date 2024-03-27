@@ -12,7 +12,7 @@ pub struct Configuration {
     pub ai: ai::AIConfiguration,
     pub ticket: providers::TicketProviderConfiguration,
     pub commit_instructions: Vec<String>,
-    
+
     pub vcs: Option<vcs::VCSConfiguration>,
     pub pull_request_instructions: Option<Vec<String>>,
 }

@@ -22,12 +22,25 @@ async fn main() -> Result<(), Error> {
                 cli::get_ticket_id(&sub_matches, &configuration)
             );
 
-            let ticket = providers::get_ticket(&configuration.ticket, ticket_id).await?;
+            let get_ticket_result = providers::get_ticket(&configuration.ticket, ticket_id).await?;
+            let ticket = if get_ticket_result.title.is_empty() {
+                None
+            } else {
+                Some(get_ticket_result)
+            };
 
             let message = ai::generate_message(configuration, ticket, diff.unwrap()).await?;
 
-            // git::write_message(message);
-            println!("{:#?}", message);
+            let content = message.get("choices").unwrap()[0]
+                .get("message")
+                .unwrap()
+                .get("content")
+                .unwrap()
+                .to_string()
+                .replace("\"", "")
+                .replace("\\n", "\n");
+
+            println!("{}", content);
         }
         Some(("create", _)) => {
             let configuration = Configuration::read();

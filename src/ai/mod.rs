@@ -14,7 +14,7 @@ pub const AVAILABLE_AI: &[&str; 1] = &["OpenAI"];
 
 pub async fn generate_message(
     configuration: super::Configuration,
-    ticket: Ticket,
+    ticket: Option<Ticket>,
     diff: String,
 ) -> Result<serde_json::Value, reqwest::Error> {
     match &configuration.ai {
