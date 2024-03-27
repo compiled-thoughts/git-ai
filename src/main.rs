@@ -28,7 +28,8 @@ impl Configuration {
 
     pub fn read() -> Configuration {
         let configuration_file_path = Path::new("./git-message.json");
-        let file = fs::read_to_string(configuration_file_path).expect("Failed to read configuration");
+        let file =
+            fs::read_to_string(configuration_file_path).expect("Failed to read configuration");
 
         serde_json::from_str(&file).unwrap()
     }
@@ -56,13 +57,21 @@ async fn main() -> Result<(), Error> {
 
             let message = ai::generate_message(configuration, ticket, diff.unwrap()).await?;
 
-            println!("{:#?}", message);
+            let content = message.get("choices").unwrap()[0]
+                .get("message")
+                .unwrap()
+                .get("content")
+                .unwrap()
+                .to_string()
+                .replace("\"", "")
+                .replace("\\n", "\n");
+            println!("{}", content);
         }
         Some(("initiate", _)) => {
             cli::interactive::initiate();
 
             println!("✅ Configuration saved with success!");
-        },
+        }
         _ => panic!("command not found! Please try using --help"),
     }
 

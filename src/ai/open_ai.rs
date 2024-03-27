@@ -44,42 +44,43 @@ pub async fn generate_message(
         ChatMessage {
             role: String::from("system"),
             content: String::from(
-                r#"You are a git message generator which receives the user input and output a great message
-        following the patterns provided by the user input considering these contexts:
-  the git diff of the commits and the related task or ticket.
+                r#"You should act as a senios software developer that will generate git commit messages following
+the semantic commit convention to generate beautiful commit message that if easy to read.
+Wenever you receive a Ticket information, you should use these information to help contextualize the
+updates you will receive on git diff.
+You should use emojis whenever it is usefull to help the developers understand what was implemented in the git diff.
+You should take care of not violate the semantic commit rules when use emojis.
+You should not include any extra content on your response, only the final commit message ready to be included on a git commit.
   "#,
             ),
         },
         ChatMessage {
             role: "user".to_string(),
             content: format!(
-                "Follow this pattern as strict as prossible:\n* {}",
-                payload.instructions.join("\n * ")
-            ),
-        },
-        ChatMessage {
-            role: "user".to_string(),
-            content: format!(
                 r#"
-        Based on the following git commit diff, generate a beautiful and compreensive
-        git commit message following the Semantic Commit format and using emojis whenever you need.
-        You should not include any content on your response, only the commit contet ready to be used.
-
+This is the git diff:
 ```
 {}
 ```
-
-        The commit message should pass in the Semantic Commit format validation.
             \n\n"#,
                 payload.diff,
             ),
         },
     ];
+    if payload.instructions.len() > 0 {
+        messages.push(ChatMessage {
+            role: "user".to_string(),
+            content: format!(
+                "Follow the following instruction as much as possible:\n* {}",
+                payload.instructions.join("* \n")
+            ),
+        })
+    }
     match &payload.ticket {
         Some(ticket) => messages.push(ChatMessage {
             role: "user".to_string(),
             content: format!(
-                "Task title: {}\nTask description: {}\n",
+                "Ticket title: {}\nTicket description: {}\n",
                 ticket.title, ticket.description,
             ),
         }),

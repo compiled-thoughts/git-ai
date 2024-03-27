@@ -19,7 +19,7 @@ pub async fn get_ticket(
     id: String,
     configuration: &JiraConfiguration,
 ) -> Result<Option<Value>, Error> {
-    if id == "skip" { // sory for this, lest think in a better strategy to deal with this case
+    if id.is_empty() {
         return Ok(None);
     }
     let url = format!(
