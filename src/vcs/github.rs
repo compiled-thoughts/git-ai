@@ -26,6 +26,9 @@ pub async fn create_pr(pr_payload: super::CreatePRPayload) -> Result<Value, Erro
 
     let json_body = serde_json::json!({
         "title": "",
+        "body": "",
+        "base": "",
+        "head": ""
     });
 
     let response = client
