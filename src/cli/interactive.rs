@@ -1,21 +1,35 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select, Confirm};
+use dialoguer::{theme::ColorfulTheme, Editor, Input, MultiSelect, Select};
 
-use crate::{ai::AIConfiguration, providers::TicketProviderConfiguration, Configuration};
+use crate::{
+    ai::AIConfiguration, configuration::Instructions, providers::TicketProviderConfiguration,
+    Configuration,
+};
 
-pub fn generate(configuration: &Configuration) -> String {
+pub fn get_task_ids(configuration: &Configuration) -> Vec<String> {
     let binding = ColorfulTheme::default();
 
-    let mut prompt = Input::with_theme(&binding).with_prompt("📝 What is the ticket id:");
+    if configuration.ticket.is_none() {
+        return Vec::new();
+    }
 
-    match &configuration.ticket {
+    let mut task_id = Input::with_theme(&binding)
+        .with_prompt("📝 What is the ticket ids? To use more then one use comman (,):");
+
+    match &configuration.ticket.as_ref().unwrap() {
         crate::providers::TicketProviderConfiguration::JIRA(jira) => {
             if let Some(prefix) = &jira.prefix {
-                prompt = prompt.with_initial_text(prefix);
+                task_id = task_id.with_initial_text(prefix);
             };
         }
     }
 
-    prompt.interact_text().unwrap()
+    let task_id_input: String = task_id.interact_text().unwrap();
+
+    task_id_input
+        .split(',')
+        .into_iter()
+        .map(|v| v.to_string())
+        .collect()
 }
 
 pub fn create(configuration: &Configuration) {

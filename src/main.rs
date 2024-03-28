@@ -17,32 +17,19 @@ async fn main() -> Result<(), Error> {
         Some(("generate", sub_matches)) => {
             let configuration = Configuration::read();
 
-            let (diff, ticket_id) = tokio::join!(
+            let (diff, ticket_ids) = tokio::join!(
                 git::get_diff(),
-                cli::get_ticket_id(&sub_matches, &configuration)
+                cli::get_ticket_ids(&sub_matches, &configuration)
             );
 
-            let get_ticket_result = providers::get_ticket(&configuration.ticket, ticket_id).await?;
-            let ticket = if get_ticket_result.title.is_empty() {
-                None
-            } else {
-                Some(get_ticket_result)
-            };
+            let tickets = providers::get_tickets(&configuration.ticket, ticket_ids).await?;
 
-            let message = ai::generate_message(configuration, ticket, diff.unwrap()).await?;
+            let message = ai::generate_message(configuration, tickets, diff.unwrap()).await?;
 
-            let content = message.get("choices").unwrap()[0]
-                .get("message")
-                .unwrap()
-                .get("content")
-                .unwrap()
-                .to_string()
-                .replace("\"", "")
-                .replace("\\n", "\n");
-
-            println!("{}", content);
+            println!("{}", &message);
+            
+            git::write_message(&message);
         }
-        Some(("create", _)) => {
             let configuration = Configuration::read();
 
             let payload = vcs::PullRequestPayload {

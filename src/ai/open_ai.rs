@@ -15,8 +15,8 @@ pub struct OpenAIConfiguration {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ChatMessage {
-    role: &str,
+struct ChatMessage<'a> {
+    role: &'a str,
     content: String,
 }
 
@@ -64,7 +64,7 @@ pub async fn generate_message(
 
 pub fn get_prompt_for_commit(
     diff: String,
-    ticket: Option<Ticket>,
+    tickets: Vec<Ticket>,
     commit_instructions: Vec<String>,
 ) -> serde_json::Value {
     let mut messages: Vec<ChatMessage> = vec![
@@ -105,14 +105,20 @@ pub fn get_prompt_for_commit(
         })
     }
 
-    if let Some(ticket) = &ticket {
+    if tickets.len() != 0 {
         messages.push(ChatMessage {
             role: "user",
-            content: format!(
-                "Ticket title: {}\nTicket description: {}\n",
-                ticket.title, ticket.description,
-            ),
-        })
+            content: tickets
+                .iter()
+                .map(|ticket| {
+                    format!(
+                        "Task id: {}\nTask title: {}\nTask description: {}\n",
+                        ticket.id, ticket.title, ticket.description,
+                    )
+                })
+                .collect::<Vec<String>>()
+                .join("\n---\n"),
+        });
     }
 
     serde_json::json!(messages)
