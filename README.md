@@ -21,12 +21,28 @@ git-ai initiate
 2. Declare these envinroment varibles:
 
 ```.env
-GMA_JIRA_AUTHORIZATION=<jira authorization can be your user and password as a basic>
-GMA_OPENAI_TOKEN=<you can get it here: https://platform.openai.com/api-keys>
+
+# If you are using JIRA
+GA_JIRA_API_KEY=<you can get it here: https://id.atlassian.com/manage-profile/security/api-tokens>
+GA_JIRA_USER=<your user to sign in into jira>
+
+# If you are using OPENAI
+GA_OPENAI_TOKEN=<you can get it here: https://platform.openai.com/api-keys>
 ```
 
-> Example: GMA_JIRA_AUTHORIZATION="Basic dXNlcjpwYXNzd29yZA=="   
-> Example: GMA_OPENAI_TOKEN="sk-ODIAjsoid"
+> **Example unix:**  
+> ```bash
+> export GA_JIRA_USER="copiled@gmail.com"  
+> export GA_JIRA_TOKEN="ITH0AOKENTIJAR"  
+> export GA_OPENAI_TOKEN="sk-ODIAjsoid"
+> ```
+
+> **Example windows:**
+> ```powershell
+> $Env:GA_JIRA_USER="copiled@gmail.com"  
+> $Env:GA_JIRA_TOKEN="ITH0AOKENTIJAR"  
+> $Env:GA_OPENAI_TOKEN="sk-ODIAjsoid"
+> ```
 
 ## Usage
 
@@ -44,7 +60,7 @@ git-ai generate -i
 
 | Command            | Description                                     | Arguments                                         |
 | ------------------ | ----------------------------------------------- | ------------------------------------------------- |
-| `generate` or `-g` | Generates a message with predefined arguments   | (`ticket-id` or `-t`), (`interactive` or `-i`) |
+| `generate` or `-g` | Generates a message with predefined arguments   | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
 | `initiate` or `-i` | Initializes the configuration                   | none                                              |
 
 ```bash
