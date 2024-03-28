@@ -1,7 +1,5 @@
 use clap::{Arg, Command};
 
-use crate::Configuration;
-
 pub fn run() -> Command {
     Command::new("git-ai")
         .about("A CLI to generate messages for commits, title and description for pull requests based on task using AI!")
@@ -60,9 +58,9 @@ pub fn run() -> Command {
                         ),
                 )
                 .arg(
-                    Arg::new("branch-source")
+                    Arg::new("source-branch")
                         .short('s')
-                        .long("branch-source")
+                        .long("source-branch")
                         .value_name("feat/RT-000/add-humans")
                         .help("What is the name source branch name")
                         .long_help(
@@ -70,14 +68,13 @@ pub fn run() -> Command {
                         ),
                 )
                 .arg(
-                    Arg::new("branch-target")
+                    Arg::new("target-branch")
                         .short('t')
-                        .long("branch-target")
+                        .long("target-branch")
                         .value_name("feat/RT-666/remove-humans")
-                        .required(true)
                         .help("What is the name target branch name")
                         .long_help(
-                            "The name of the branch which will receives the merge",
+                            "The name of the branch which will receives the merge. If you omit it will be the main branch.",
                         ),
                 )
                 .subcommand(
@@ -99,9 +96,36 @@ pub fn run() -> Command {
         )
 }
 
-pub fn generate(sub_matches: &clap::ArgMatches, _configuration: &Configuration) -> String {
+pub fn get_task_ids(sub_matches: &clap::ArgMatches) -> Vec<String> {
     sub_matches
-        .get_one::<String>("ticket-id")
+        .get_many::<String>("ticket-id")
         .unwrap()
-        .to_string()
+        .into_iter()
+        .map(|v| v.to_string())
+        .collect()
+}
+
+pub fn get_source_and_target_branches(sub_matches: &clap::ArgMatches, default_source: String) -> (String, String) {
+    let input_source = sub_matches
+        .get_one::<String>("source-branch");
+
+    let mut source = default_source;
+    let mut target = String::from("main");
+
+    if let Some(s) = input_source {
+        if !s.is_empty() {
+            source = s.to_string();
+        }
+    }
+
+    let input_target = sub_matches
+        .get_one::<String>("target-branch");
+    
+    if let Some(t) = input_target {
+        if !t.is_empty() {
+            target = t.to_string();
+        }
+    }
+
+    (source, target)
 }
