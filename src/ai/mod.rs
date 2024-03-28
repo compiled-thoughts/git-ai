@@ -30,11 +30,19 @@ pub async fn generate_message(
         } // _ => { unreachable!("AI not found!") },
     }
 }
+
+pub async fn generate_pull_request(
+    configuration: &super::Configuration,
+    tickets: Vec<Ticket>,
+    commits: Vec<String>,
 ) -> Result<serde_json::Value, reqwest::Error> {
     match &configuration.ai {
         AIConfiguration::OpenAI(open_ai_configuration) => {
-            let commit_payload =
-                open_ai::get_prompt_for_commit(diff, ticket, configuration.commit_instructions);
+            let commit_payload = open_ai::get_prompt_for_pull_request(
+                commits,
+                tickets,
+                configuration.instructions.pr.clone(),
+            );
 
             let message = open_ai::generate_message(commit_payload, open_ai_configuration).await?;
 

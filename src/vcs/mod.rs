@@ -8,6 +8,8 @@ pub mod github;
 pub struct PullRequestPayload {
     pub title: String,
     pub body: String,
+    pub head: String,
+    pub base: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,10 +47,14 @@ pub async fn create_pull_requet(
 
     match &configuration.vcs {
         Some(VCSConfiguration::Github) => {
-            github::create_pr(CreatePRPayload {
-                repository,
-                content,
-            });
+            println!(
+                "{:?}",
+                github::create_pr(CreatePRPayload {
+                    repository,
+                    content,
+                })
+                .await?
+            );
 
             Ok(())
         }

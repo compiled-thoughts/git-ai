@@ -122,3 +122,60 @@ pub fn get_prompt_for_commit(
 
     serde_json::json!(messages)
 }
+
+pub fn get_prompt_for_pull_request(
+    commit_list: Vec<String>,
+    ticket_list: Vec<Ticket>,
+    pull_request_instructions: Option<Vec<String>>,
+) -> serde_json::Value {
+    let mut payload = vec![
+        ChatMessage {
+            role: "system",
+            content: String::from("You should act as a senior software developer \
+                that will generate beautiful and clearly good pull request title and \
+                body following the provided instructions and a list of commit message. \
+                Whenever you receive a list of commits and maybe a task, you should \
+                use these informations to help contextualize the reviewers in the pr \
+                title and description which you will generate. You should follow the \
+                instructions to do it. You should not include any extra content on your \
+                response only a title at the first line and a body that can you more \
+                than one line"),
+        },
+        ChatMessage {
+            role: "user",
+            content: format!("List of commit messages:\n{}", commit_list.join("\n * ")),
+        }
+    ];
+
+    if let Some(instructions) = pull_request_instructions {
+        if instructions.len() != 0 {
+            payload.push(ChatMessage {
+                role: "user",
+                content: format!(
+                    "Follow this rule as strict as prossible:\n* {}",
+                    instructions.join("\n * ")
+                ),
+            });
+        }
+    }
+
+    if ticket_list.len() != 0 {
+        let tickets = ticket_list
+            .iter()
+            .map(|ticket| {
+                format!(
+                    "Task title: {}\nTask description: {}\n",
+                    ticket.title, ticket.description,
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n---\n");
+
+        payload.push(ChatMessage {
+            role: "user",
+            content: tickets,
+        });
+    }
+
+    serde_json::json!(payload)
+}

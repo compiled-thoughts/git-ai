@@ -30,14 +30,36 @@ async fn main() -> Result<(), Error> {
             
             git::write_message(&message);
         }
+        Some(("create", sub_matches)) => {
             let configuration = Configuration::read();
 
+            let ticket_ids: Vec<String> = cli::get_ticket_ids(sub_matches, &configuration).await;
+
+            let (tickets, default_source_branch) = tokio::join!(
+                providers::get_tickets(&configuration.ticket, ticket_ids),
+                git::get_current_branch(),
+            );
+
+            let (head, base) =
+                cli::get_source_and_target_branches(sub_matches, default_source_branch.unwrap())
+                    .await;
+
+            let commits = git::get_different_commits_between_branches(&head, &base).await;
+
+            let message =
+                ai::generate_pull_request(&configuration, tickets.unwrap(), commits.unwrap()).await?;
+
+            let (title, body) =
+                cli::interactive::get_message_change(&String::from(""), &String::from(""));
+
             let payload = vcs::PullRequestPayload {
-                title: String::from(""),
-                body: String::from(""),
+                title,
+                body,
+                base,
+                head,
             };
 
-            vcs::create_pull_requet(configuration, payload);
+            vcs::create_pull_requet(configuration, payload).await?;
 
             println!("✅ Pull request created with success!");
         }

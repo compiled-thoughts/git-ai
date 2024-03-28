@@ -32,8 +32,47 @@ pub fn get_task_ids(configuration: &Configuration) -> Vec<String> {
         .collect()
 }
 
-pub fn create(configuration: &Configuration) {
+pub fn get_source_and_target_branches(default_source: String) -> (String, String) {
+    let binding = ColorfulTheme::default();
 
+    let source_branch = Input::with_theme(&binding)
+        .with_prompt("⤴️ What is the source branch:")
+        .allow_empty(false)
+        .with_initial_text(default_source)
+        .interact_text()
+        .unwrap();
+
+    let target_branch = Input::with_theme(&binding)
+        .with_prompt("⤴️ What is the target branch:")
+        .allow_empty(false)
+        .with_initial_text("main")
+        .interact_text()
+        .unwrap();
+
+    (source_branch, target_branch)
+}
+
+pub fn get_message_change(suggested_title: &String, suggested_body: &String) -> (String, String) {
+    let binding = ColorfulTheme::default();
+
+    let mut pull_request_title =
+        Input::with_theme(&binding).with_prompt("📓 Pull request title will be:");
+
+    if !suggested_title.is_empty() {
+        pull_request_title = pull_request_title.with_initial_text(suggested_title);
+    }
+
+    let title = pull_request_title.interact_text().unwrap();
+
+    let pull_request_body = Editor::new();
+
+    let mut body = String::new();
+
+    if let Some(input) = pull_request_body.edit(suggested_body.as_str()).unwrap() {
+        body = input;
+    }
+
+    (title, body)
 }
 
 pub fn initiate() {
@@ -72,7 +111,7 @@ pub fn initiate() {
         .interact()
         .unwrap();
 
-    let ticket: TicketProviderConfiguration;
+    let ticket: Option<TicketProviderConfiguration>;
 
     match crate::providers::AVAILABLE_TICKET_PROVIDERS.get(provider_index) {
         Some(&"JIRA") => {
@@ -91,37 +130,40 @@ pub fn initiate() {
                 ),
             };
 
-            ticket = crate::providers::TicketProviderConfiguration::JIRA(jira);
+            ticket = Some(crate::providers::TicketProviderConfiguration::JIRA(jira));
         }
+        Some(&"None") => ticket = None,
         _ => panic!("Ticket provider not found!"),
     }
 
+    let features = MultiSelect::with_theme(&binding)
+        .with_prompt("✨ Which features would you like to use?")
+        .items(&["Generate commit messages", "Create pull requests"])
+        .defaults(&[true, true])
+        .interact();
+
     let mut commit_instructions = vec![];
 
-    loop {
-        let last_instruction: String = Input::with_theme(&binding)
-            .with_prompt("📐 What are the instructions for the AI generate the commit message? Type one and press `Enter` to finish keep empty:")
-            .allow_empty(true)
-            .interact_text()
-            .unwrap();
+    if features.as_ref().unwrap().contains(&0) {
+        loop {
+            let last_instruction: String = Input::with_theme(&binding)
+                .with_prompt("📐 What are the instructions for the AI generate the commit message? Type one and press `Enter` to finish keep empty:")
+                .allow_empty(true)
+                .interact_text()
+                .unwrap();
 
-        if last_instruction.is_empty() {
-            break;
+            if last_instruction.is_empty() {
+                break;
+            }
+
+            commit_instructions.push(last_instruction);
         }
-
-        commit_instructions.push(last_instruction);
     }
-
-    let use_pull_request_creation = Confirm::with_theme(&binding)
-        .with_prompt("⤴️ Would you like to use the feature to create pull request?")
-        .default(true)
-        .interact()
-        .unwrap();
 
     let mut vcs = None;
     let mut pull_request_instructions = None;
 
-    if use_pull_request_creation {
+    if features.as_ref().unwrap().contains(&1) {
         let vcs_index = Select::with_theme(&binding)
             .with_prompt("🔀 Choose your version control system:")
             .items(&crate::vcs::AVAILABLE_VCS[..])
@@ -138,23 +180,27 @@ pub fn initiate() {
                 .allow_empty(true)
                 .interact_text()
                 .unwrap();
-    
+
             if last_instruction.is_empty() {
                 break;
             }
-    
+
             instructions.push(last_instruction);
         }
 
         pull_request_instructions = Some(instructions);
     }
 
+    let instructions = Instructions {
+        commit: commit_instructions,
+        pr: pull_request_instructions,
+    };
+
     let configuration = Configuration {
         ai,
         vcs,
         ticket,
-        commit_instructions,
-        pull_request_instructions,
+        instructions,
     };
 
     configuration.save()
