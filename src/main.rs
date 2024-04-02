@@ -65,6 +65,16 @@ async fn main() -> Result<(), Error> {
 
             println!("✅ Pull request created with success!");
         }
+        Some(("install", sub_matches)) => {
+            match sub_matches.subcommand_name() {
+                Some("git-hook") => {
+                    let _ = git::add_git_hook().await;
+                }
+                _ => panic!("❌ Command not found! Please try using --help"),
+            }
+
+            println!("✅ Commit hook added suceffully!");
+        }
         Some(("initiate", _)) => {
             cli::interactive::initiate();
 
