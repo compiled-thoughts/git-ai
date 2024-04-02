@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{fs, iter::FromIterator, path::Path};
+use std::{fs, io::Write, iter::FromIterator, env::current_exe, path::Path};
 use tokio::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,6 +12,36 @@ fn remove_unecessary_lines(diff: &String) -> String {
     diff.split("\n")
         .filter(|l| !l.starts_with("index"))
         .collect()
+}
+
+async fn get_hooks_path() -> Result<String, std::io::Error> {
+    let output = Command::new("git")
+        .args(["config", "--get", "core.hooksPath"])
+        .output()
+        .await?;
+
+    let path = String::from_iter(output.stdout.iter().map(|&c| c as char));
+
+    if !path.is_empty() {
+        Ok(path)
+    } else {
+        Ok(String::from(".git/hooks"))
+    }
+}
+
+pub async fn add_git_hook() -> Result<(), std::io::Error> {
+    let path = get_hooks_path().await?;
+
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(format!("{path}/pre-commit"))?;
+
+    if let Some(exe) = current_exe().ok() {
+        file.write_all(format!("{} generate -i", exe.display()).as_bytes())?;
+    }
+
+    Ok(())
 }
 
 fn get_repository_name(remote: &Vec<&str>) -> Result<String, std::io::Error> {
@@ -71,7 +101,10 @@ pub async fn get_different_commits_between_branches(
     let commits = String::from_iter(output.stdout.iter().map(|&c| c as char));
 
     if !commits.is_empty() {
-        Ok(commits.split("\n").map(String::from).collect::<Vec<String>>())
+        Ok(commits
+            .split("\n")
+            .map(String::from)
+            .collect::<Vec<String>>())
     } else {
         Err(std::io::Error::new(
             std::io::ErrorKind::Other,
@@ -103,7 +136,10 @@ pub async fn get_remote_origin() -> Result<Repository, std::io::Error> {
 }
 
 pub async fn get_diff() -> Result<String, std::io::Error> {
-    let output = Command::new("git").args(["diff", "--cached", "--exit-code"]).output().await?;
+    let output = Command::new("git")
+        .args(["diff", "--cached", "--exit-code"])
+        .output()
+        .await?;
 
     let diff = String::from_iter(output.stdout.iter().map(|&c| c as char));
 
@@ -124,7 +160,11 @@ pub fn write_message(message: &String) {
 
     let current_lines: Vec<String> = current_message.split("\n").map(String::from).collect();
 
-    let new_lines: Vec<String> = message.replacen("\"", "", 2).split("\\n").map(String::from).collect();
+    let new_lines: Vec<String> = message
+        .replacen("\"", "", 2)
+        .split("\\n")
+        .map(String::from)
+        .collect();
 
     let lines: Vec<String> = new_lines.into_iter().chain(current_lines).collect();
 
