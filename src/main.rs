@@ -26,9 +26,11 @@ async fn main() -> Result<(), Error> {
 
             let message = ai::generate_message(configuration, tickets, diff.unwrap()).await?;
 
-            println!("{}", &message);
-            
+            if *sub_matches.get_one("dry-run").unwrap() {
+                message.split('\n').for_each(|m| println!("{}", m));
+            } else {
             git::write_message(&message);
+            }
         }
         Some(("create", sub_matches)) => {
             let configuration = Configuration::read();
