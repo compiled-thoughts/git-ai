@@ -44,22 +44,23 @@ impl Configuration {
     }
 
     pub fn save(&self) {
-        const CONFIGURATION_FILE_PATH: &Path = Path::new(CONFIGURATION_FILE);
+        let configuration_file: &Path = Path::new(CONFIGURATION_FILE);
         
         let _ = fs::write(
-            CONFIGURATION_FILE_PATH,
+            configuration_file,
             serde_json::to_string_pretty(&self).unwrap(),
         );
     }
 
     pub fn read() -> Self {
-        const CONFIGURATION_FILE_PATH: &Path = Path::new(CONFIGURATION_FILE);
+        let configuration_file: &Path = Path::new(CONFIGURATION_FILE);
 
-        if !CONFIGURATION_FILE_PATH.exists() {
+        if !configuration_file.exists() {
+            println!("⚠️ Configuration file `git-message.json` not found using default!");
             return Self::new();
         }
 
-        let file = fs::read_to_string(CONFIGURATION_FILE_PATH)
+        let file = fs::read_to_string(configuration_file)
             .expect(format!("Failed to read configuration file `{}`", CONFIGURATION_FILE).as_str());
 
         serde_json::from_str(&file).unwrap()
