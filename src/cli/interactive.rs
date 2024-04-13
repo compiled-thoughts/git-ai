@@ -1,7 +1,7 @@
-use dialoguer::{theme::ColorfulTheme, Editor, Input, MultiSelect, Select};
+use dialoguer::{theme::ColorfulTheme, Confirm, Editor, Input, MultiSelect, Select};
 
 use crate::{
-    ai::AIConfiguration, configuration::Instructions, providers::TicketProviderConfiguration,
+    ai::AIConfiguration, configuration::Instructions, git, providers::TicketProviderConfiguration,
     Configuration,
 };
 
@@ -77,6 +77,16 @@ pub fn get_message_change(suggested_title: &String, suggested_body: &String) -> 
 
 pub fn initiate() {
     let binding = ColorfulTheme::default();
+
+    let install_hook = Confirm::with_theme(&binding)
+        .with_prompt("🪝 Do you want to install it as a git hook (If `Y` it will run when you use git commit):")
+        .default(true)
+        .interact()
+        .unwrap();
+
+    if install_hook {
+        let _ = git::add_git_hook();
+    }
 
     let ai_index = Select::with_theme(&binding)
         .with_prompt("🧠 Choose your AI:")
