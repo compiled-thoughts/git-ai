@@ -10,14 +10,21 @@ pub struct MessagePayload {
     pub instructions: Vec<String>,
 }
 
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AIConfiguration {
     OpenAI(open_ai::OpenAIConfiguration),
 }
 
+/// A list of available AI API integrations
 pub const AVAILABLE_AI: &[&str; 1] = &["OpenAI"];
 
+/// This method will choose the defined AI
+/// on the configurations to run the
+/// commit message.
+///
+/// TODO: for now, we have only the openAI implementation
 pub async fn generate_message(
     configuration: super::Configuration,
     ticket: Option<Ticket>,
