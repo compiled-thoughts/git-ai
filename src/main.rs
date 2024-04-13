@@ -29,7 +29,7 @@ async fn main() -> Result<(), Error> {
             if *sub_matches.get_one("dry-run").unwrap() {
                 message.split('\n').for_each(|m| println!("{}", m));
             } else {
-            git::write_message(&message);
+                git::write_message(&message);
             }
         }
         Some(("create", sub_matches)) => {
@@ -48,8 +48,10 @@ async fn main() -> Result<(), Error> {
 
             let commits = git::get_different_commits_between_branches(&head, &base).await;
 
-            let message =
-                ai::generate_pull_request(&configuration, tickets.unwrap(), commits.unwrap()).await?;
+
+            let _message =
+                ai::generate_pull_request(&configuration, tickets.unwrap(), commits.unwrap())
+                    .await?;
 
             let (title, body) =
                 cli::interactive::get_message_change(&String::from(""), &String::from(""));
