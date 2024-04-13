@@ -8,6 +8,10 @@ This project is a CLI developed in Rust which can be called using `git-ai` cli t
 
 ## Installation
 
+You can install it using a binary file from [here](#todo-add-link) or install as a package of your language:
+
+- [Node](./docs/NODE.md)
+
 [TODO] For each language
 
 ### Start the configuration
@@ -58,10 +62,11 @@ git-ai generate -i
 
 ## Available Options
 
-| Command            | Description                                     | Arguments                                         |
-| ------------------ | ----------------------------------------------- | ------------------------------------------------- |
-| `generate` or `-g` | Generates a message with predefined arguments   | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
-| `initiate` or `-i` | Initializes the configuration                   | none                                              |
+| Command                | Description                                      | Arguments                                         |
+| ---------------------- | ------------------------------------------------ | ------------------------------------------------- |
+| `generate` or `-g`     | Generates a message with predefined arguments    | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
+| (WIP) `create` or `-c` | Creates a pull request with predefined arguments | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
+| `initiate` or `-i`     | Initializes the configuration                    | none                                              |
 
 ```bash
 git-ai --help  
