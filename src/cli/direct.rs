@@ -1,30 +1,37 @@
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 
 pub fn run() -> Command {
-    let dry_run_arg = || Arg::new("dry-run")
+    let dry_run_arg = || {
+        Arg::new("dry-run")
         .short('d')
         .long("dry-run")
         .required(false)
+        .action(ArgAction::SetTrue)
         .help("Just output the message")
         .long_help(
             "It will get the ticket and diff to generates the message using the chosed ai but not write the message",
-        );
+        )
+    };
 
-    let ticket_id_arg = || Arg::new("ticket-id")
-        .short('t')
-        .long("ticket-id")
-        .value_name("DP-42")
-        .required(false)
-        .default_value("")
-        .help("What is the ticket id")
-        .long_help("This ticket will be read to improve the commit message");
+    let ticket_id_arg = || {
+        Arg::new("ticket-id")
+            .short('t')
+            .long("ticket-id")
+            .value_name("DP-42")
+            .required(false)
+            .default_value("")
+            .help("What is the ticket id")
+            .long_help("This ticket will be read to improve the commit message")
+    };
 
-    let interactive_subcommand = || Command::new("interactive")
-        .short_flag('i')
-        .long_flag("interactive")
-        .about("Use the interactive mode")
-        .long_about("When this flag is enabled you can add the inputs interactively")
-        .arg(dry_run_arg());
+    let interactive_subcommand = || {
+        Command::new("interactive")
+            .short_flag('i')
+            .long_flag("interactive")
+            .about("Use the interactive mode")
+            .long_about("When this flag is enabled you can add the inputs interactively")
+            .arg(dry_run_arg())
+    };
 
     Command::new("git-ai")
         .about("A CLI to generate messages for commits, title and description for pull requests based on task using AI!")
