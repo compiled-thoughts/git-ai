@@ -14,12 +14,19 @@ pub struct OpenAIConfiguration {
     pub model: String,
 }
 
+/// This represents a chat message with the openAI api.
+///
+/// This chat is composed by a conversation of the user,
+/// this will be represented by this program talking as the user,
+/// and the system that is the AI that will provide the response.
 #[derive(Serialize, Deserialize, Debug)]
 struct ChatMessage {
     role: String,
     content: String,
 }
 
+/// Will generate a commit message based on current project git diff
+/// output and, if enabled, the given ticket information.
 pub async fn generate_message(
     payload: MessagePayload,
     configuration: &OpenAIConfiguration,
@@ -27,7 +34,7 @@ pub async fn generate_message(
     let url = "https://api.openai.com/v1/chat/completions";
     let token = format!(
         "Bearer {}",
-        env::var("GMA_OPENAI_TOKEN").expect("Environment `GMA_OPENAI_TOKEN`")
+        env::var("GMA_OPENAI_TOKEN").expect("Environment variable `GMA_OPENAI_TOKEN` is not defined")
     );
 
     let model = &configuration.model;
