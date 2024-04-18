@@ -22,7 +22,7 @@ pub struct Configuration {
     pub ticket: Option<providers::TicketProviderConfiguration>,
 }
 
-static CONFIGURATION_FILE: &str = "./git-message.json";
+static CONFIGURATION_FILE: &str = "./git-ai.json";
 
 impl Configuration {
     pub fn new() -> Self {
@@ -45,7 +45,7 @@ impl Configuration {
 
     pub fn save(&self) {
         let configuration_file: &Path = Path::new(CONFIGURATION_FILE);
-        
+
         let _ = fs::write(
             configuration_file,
             serde_json::to_string_pretty(&self).unwrap(),
@@ -56,12 +56,12 @@ impl Configuration {
         let configuration_file: &Path = Path::new(CONFIGURATION_FILE);
 
         if !configuration_file.exists() {
-            println!("⚠️ Configuration file `git-message.json` not found using default!");
+            println!("⚠️ Configuration file `{CONFIGURATION_FILE}` not found using default!");
             return Self::new();
         }
 
         let file = fs::read_to_string(configuration_file)
-            .expect(format!("Failed to read configuration file `{}`", CONFIGURATION_FILE).as_str());
+            .expect(format!("Failed to read configuration file `{CONFIGURATION_FILE}`").as_str());
 
         serde_json::from_str(&file).unwrap()
     }
