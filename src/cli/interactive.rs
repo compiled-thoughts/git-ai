@@ -111,7 +111,7 @@ pub fn initiate() {
 
             ai = crate::ai::AIConfiguration::OpenAI(open_ai);
         }
-        _ => panic!("AI not found!"),
+        _ => panic!("AI [{ai_index}] not found!\nCheck the list on ai::AVAILABLE_AI"),
     }
 
     let provider_index = Select::with_theme(&binding)

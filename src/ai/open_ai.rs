@@ -13,12 +13,19 @@ pub struct OpenAIConfiguration {
     pub model: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+/// This represents a chat message with the openAI api.
+///
+/// This chat is composed by a conversation of the user,
+/// this will be represented by this program talking as the user,
+/// and the system that is the AI that will provide the response.
+#[derive(Debug, Deserialize, Serialize)]
 struct ChatMessage<'a> {
     role: &'a str,
     content: String,
 }
 
+/// Will generate a commit message based on current project git diff
+/// output and, if enabled, the given ticket information.
 pub async fn generate_message(
     messages: serde_json::Value,
     configuration: &OpenAIConfiguration,
