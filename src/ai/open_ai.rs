@@ -1,5 +1,3 @@
-use std::env;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -7,6 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::{Client, Error};
 
 use crate::providers::Ticket;
+use crate::secrets::Variables;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,12 +24,7 @@ pub async fn generate_message(
     configuration: &OpenAIConfiguration,
 ) -> Result<Value, Error> {
     let url = "https://api.openai.com/v1/chat/completions";
-    let token = format!(
-        "Bearer {}",
-        env::var("GA_OPENAI_TOKEN").expect("Environment variable `GA_OPENAI_TOKEN`")
-    );
-
-    let model = &configuration.model;
+    let token = format!("Bearer {}", Variables::OpenaiToken.get());
 
     let client = Client::builder().build().unwrap();
     let mut headers = HeaderMap::new();
@@ -41,7 +35,7 @@ pub async fn generate_message(
     );
 
     let json_body = serde_json::json!({
-        "model": model,
+        "model": &configuration.model,
         "temperature": 0.2,
         "messages": messages,
     });
@@ -56,7 +50,7 @@ pub async fn generate_message(
     match response {
         Ok(r) => r.json::<Value>().await,
         Err(e) => {
-            println!("ERROR: Generating the message {}", e.to_string());
+            println!("❌ ERROR: Generating the message {e}");
             Ok(Value::Null)
         }
     }
@@ -87,9 +81,8 @@ pub fn get_prompt_for_commit(
             content: format!(
                 "This is the git diff:\n \
                 ```\n\
-                {}\n\
-                ```",
-                diff,
+                {diff}\n\
+                ```"
             ),
         },
     ];
@@ -131,7 +124,8 @@ pub fn get_prompt_for_pull_request(
     let mut payload = vec![
         ChatMessage {
             role: "system",
-            content: String::from("You should act as a senior software developer \
+            content: String::from(
+                "You should act as a senior software developer \
                 that will generate beautiful and clearly good pull request title and \
                 body following the provided instructions and a list of commit message. \
                 Whenever you receive a list of commits and maybe a task, you should \
@@ -139,12 +133,13 @@ pub fn get_prompt_for_pull_request(
                 title and description which you will generate. You should follow the \
                 instructions to do it. You should not include any extra content on your \
                 response only a title at the first line and a body that can you more \
-                than one line"),
+                than one line",
+            ),
         },
         ChatMessage {
             role: "user",
             content: format!("List of commit messages:\n{}", commit_list.join("\n * ")),
-        }
+        },
     ];
 
     if let Some(instructions) = pull_request_instructions {

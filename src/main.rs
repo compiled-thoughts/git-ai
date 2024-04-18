@@ -3,6 +3,7 @@ use reqwest::Error;
 mod ai;
 mod cli;
 mod configuration;
+mod secrets;
 mod git;
 mod providers;
 mod vcs;

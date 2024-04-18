@@ -1,5 +1,3 @@
-use std::env;
-
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,6 +9,8 @@ use futures::future;
 
 use base64::engine::general_purpose::STANDARD;
 
+use crate::secrets::Variables;
+
 use super::Ticket;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,13 +21,11 @@ pub struct JiraConfiguration {
 }
 
 pub fn get_client() -> (Client, HeaderMap) {
-    let jira_user = env::var("GA_JIRA_USER").expect("Environment variable `JIRA_USER`");
-    let jira_token = env::var("GA_JIRA_TOKEN").expect("Environment variable `JIRA_TOKEN`");
+    let jira_user = Variables::JiraUser.get();
+    let jira_token = Variables::JiraToken.get();
+    let basic_token = STANDARD.encode(format!("{jira_user}:{jira_token}"));
 
-    let authorization = format!(
-        "Basic {}",
-        STANDARD.encode(format!("{}:{}", jira_user, jira_token)),
-    );
+    let authorization = format!("Basic {basic_token}");
 
     let client = Client::builder().cookie_store(true).build().unwrap();
     let mut headers = HeaderMap::new();
@@ -46,7 +44,7 @@ pub async fn get_ticket(
     host: &String,
     id: &String,
 ) -> Result<Value, Error> {
-    let url = format!("https://{}.atlassian.net/rest/api/3/issue/{}", host, id);
+    let url = format!("https://{host}.atlassian.net/rest/api/3/issue/{id}");
 
     let response = client.get(url).headers(headers.clone()).send().await?;
 
@@ -73,7 +71,7 @@ pub async fn get_tickets(
         match response {
             Ok(r) => payloads.push(r),
             Err(e) => {
-                println!("ERROR: Getting JIRA Issue {}", e.to_string());
+                println!("ERROR: Getting JIRA Issue {e}");
             }
         }
     }

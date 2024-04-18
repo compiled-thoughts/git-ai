@@ -1,20 +1,17 @@
-use std::env;
-
 use serde_json::Value;
 
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::{Client, Error};
 
+use crate::git::Repository;
+use crate::secrets::Variables;
 
 pub async fn create_pr(pr_payload: super::CreatePRPayload) -> Result<Value, Error> {
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/pulls",
-        pr_payload.repository.owner, pr_payload.repository.name
-    );
-    let token = format!(
-        "Bearer {}",
-        env::var("GA_GITHUB_TOKEN").expect("Environment variable `GA_GITHUB_TOKEN`")
-    );
+    let github_token = Variables::GithubToken.get();
+    let token = format!("Bearer {github_token}");
+    
+    let Repository { owner, name } = pr_payload.repository;
+    let url = format!("https://api.github.com/repos/{owner}/{name}/pulls");
 
     let client = Client::builder().build().unwrap();
     let mut headers = HeaderMap::new();
