@@ -1,10 +1,16 @@
-# git-message-ai: Generate commit messages automatically
+# 🧠 git-ai
 
-`git-message-ai` cli to generate your commit messages based on code changes and a ticket / task.
+The **git-ai** generates commit messages and pull requests automatically based on your tasks and file changes.
+
+This project is a CLI developed in Rust which can be called using `git-ai` cli to generate your commit messages based on code changes and a ticket / task.
 
 [TODO] Adicionar gif
 
 ## Installation
+
+You can install it using a binary file from [here](#todo-add-link) or install as a package of your language:
+
+- [Node](./docs/NODE.md)
 
 [TODO] For each language
 
@@ -13,44 +19,61 @@
 1. It will create a local configuration file
 
 ```bash
-git-message-ai initiate
+git-ai initiate
 ```
 
 2. Declare these envinroment varibles:
 
 ```.env
-GMA_JIRA_AUTHORIZATION=<jira authorization can be your user and password as a basic>
-GMA_OPENAI_TOKEN=<you can get it here: https://platform.openai.com/api-keys>
+
+# If you are using JIRA
+GA_JIRA_API_KEY=<you can get it here: https://id.atlassian.com/manage-profile/security/api-tokens>
+GA_JIRA_USER=<your user to sign in into jira>
+
+# If you are using OPENAI
+GA_OPENAI_TOKEN=<you can get it here: https://platform.openai.com/api-keys>
 ```
 
-> Example: GMA_JIRA_AUTHORIZATION="Basic dXNlcjpwYXNzd29yZA=="   
-> Example: GMA_OPENAI_TOKEN="sk-ODIAjsoid"
+> **Example unix:**  
+> ```bash
+> export GA_JIRA_USER="copiled@gmail.com"  
+> export GA_JIRA_TOKEN="ITH0AOKENTIJAR"  
+> export GA_OPENAI_TOKEN="sk-ODIAjsoid"
+> ```
+
+> **Example windows:**
+> ```powershell
+> $Env:GA_JIRA_USER="copiled@gmail.com"  
+> $Env:GA_JIRA_TOKEN="ITH0AOKENTIJAR"  
+> $Env:GA_OPENAI_TOKEN="sk-ODIAjsoid"
+> ```
 
 ## Usage
 
 ```bash
-git-message-ai generate [ticket-id]
+git-ai generate [ticket-id]
 ```
 
 or if you prefer using interactive mode:
 
 ```bash
-git-message-ai generate -i
+git-ai generate -i
 ```
 
 ## Available Options
 
-| Command            | Description                                     | Arguments                                         |
-| ------------------ | ----------------------------------------------- | ------------------------------------------------- |
-| `generate` or `-g` | Generates a message with predefined arguments   | (`ticket-id` or `-t`), (`interactive` or `-i`) |
-| `initiate` or `-i` | Initializes the configuration                   | none                                              |
+| Command                | Description                                      | Arguments                                         |
+| ---------------------- | ------------------------------------------------ | ------------------------------------------------- |
+| `generate` or `-g`     | Generates a message with predefined arguments    | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
+| (WIP) `create` or `-c` | Creates a pull request with predefined arguments | (`ticket-id` or `-t`), (`interactive` or `-i`)    |
+| `initiate` or `-i`     | Initializes the configuration                    | none                                              |
 
 ```bash
-git-message-ai --help  
+git-ai --help  
 
 A CLI to generate your git messages!
 
-Usage: git-message-ai [COMMAND]
+Usage: git-ai [COMMAND]
 
 Commands:
   generate, -g, --generate  Generates a message with predefined arguments

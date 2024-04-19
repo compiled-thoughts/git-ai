@@ -1,39 +1,14 @@
-use std::path::Path;
-
 use reqwest::Error;
-use serde::{Deserialize, Serialize};
-use std::fs;
 
 mod ai;
 mod cli;
+mod configuration;
+mod secrets;
 mod git;
 mod providers;
+mod vcs;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Configuration {
-    ai: ai::AIConfiguration,
-    ticket: providers::TicketProviderConfiguration,
-    instructions: Vec<String>,
-}
-
-impl Configuration {
-    pub fn save(&self) {
-        let configuration_file_path = Path::new("./git-message.json");
-        let _ = fs::write(
-            configuration_file_path,
-            serde_json::to_string_pretty(&self).unwrap(),
-        );
-    }
-
-    pub fn read() -> Configuration {
-        let configuration_file_path = Path::new("./git-message.json");
-        let file =
-            fs::read_to_string(configuration_file_path).expect("Failed to read configuration");
-
-        serde_json::from_str(&file).unwrap()
-    }
-}
+use configuration::Configuration;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -43,36 +18,72 @@ async fn main() -> Result<(), Error> {
         Some(("generate", sub_matches)) => {
             let configuration = Configuration::read();
 
-            let (diff, ticket_id) = tokio::join!(
+            let (diff, ticket_ids) = tokio::join!(
                 git::get_diff(),
-                cli::get_ticket_id(&sub_matches, &configuration)
+                cli::get_ticket_ids(&sub_matches, &configuration)
             );
 
-            let get_ticket_result = providers::get_ticket(&configuration.ticket, ticket_id).await?;
-            let ticket = if get_ticket_result.title.is_empty() {
-                None
+            let tickets = providers::get_tickets(&configuration.ticket, ticket_ids).await?;
+
+            let message = ai::generate_message(configuration, tickets, diff.unwrap()).await?;
+
+            if *sub_matches.get_one("dry-run").unwrap() {
+                message.split('\n').for_each(|m| println!("{}", m));
             } else {
-                Some(get_ticket_result)
+                git::write_message(&message);
+            }
+        }
+        Some(("create", sub_matches)) => {
+            let configuration = Configuration::read();
+
+            let ticket_ids: Vec<String> = cli::get_ticket_ids(sub_matches, &configuration).await;
+
+            let (tickets, default_source_branch) = tokio::join!(
+                providers::get_tickets(&configuration.ticket, ticket_ids),
+                git::get_current_branch(),
+            );
+
+            let (head, base) =
+                cli::get_source_and_target_branches(sub_matches, default_source_branch.unwrap())
+                    .await;
+
+            let commits = git::get_different_commits_between_branches(&head, &base).await;
+
+
+            let _message =
+                ai::generate_pull_request(&configuration, tickets.unwrap(), commits.unwrap())
+                    .await?;
+
+            let (title, body) =
+                cli::interactive::get_message_change(&String::from(""), &String::from(""));
+
+            let payload = vcs::PullRequestPayload {
+                title,
+                body,
+                base,
+                head,
             };
 
-            let message = ai::generate_message(configuration, ticket, diff.unwrap()).await?;
+            vcs::create_pull_requet(configuration, payload).await?;
 
-            let content = message.get("choices").unwrap()[0]
-                .get("message")
-                .unwrap()
-                .get("content")
-                .unwrap()
-                .to_string()
-                .replace("\"", "")
-                .replace("\\n", "\n");
-            println!("{}", content);
+            println!("✅ Pull request created with success!");
+        }
+        Some(("install", sub_matches)) => {
+            match sub_matches.subcommand_name() {
+                Some("git-hook") => {
+                    let _ = git::add_git_hook().await;
+                }
+                _ => panic!("❌ Command not found! Please try using --help"),
+            }
+
+            println!("✅ Commit hook added suceffully!");
         }
         Some(("initiate", _)) => {
             cli::interactive::initiate();
 
             println!("✅ Configuration saved with success!");
         }
-        _ => panic!("command not found! Please try using --help"),
+        _ => panic!("❌ Command not found! Please try using --help"),
     }
 
     Ok(())

@@ -4,13 +4,6 @@ pub mod open_ai;
 
 use crate::providers::Ticket;
 
-pub struct MessagePayload {
-    pub diff: String,
-    pub ticket: Option<Ticket>,
-    pub instructions: Vec<String>,
-}
-
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AIConfiguration {
@@ -27,23 +20,46 @@ pub const AVAILABLE_AI: &[&str; 1] = &["OpenAI"];
 /// TODO: for now, we have only the openAI implementation
 pub async fn generate_message(
     configuration: super::Configuration,
-    ticket: Option<Ticket>,
+    tickets: Vec<Ticket>,
     diff: String,
+) -> Result<String, reqwest::Error> {
+    match &configuration.ai {
+        AIConfiguration::OpenAI(open_ai_configuration) => {
+            let commit_payload =
+                open_ai::get_prompt_for_commit(
+                    diff, 
+                    tickets, 
+                    configuration.instructions.commit
+                );
+
+            let payload = open_ai::generate_message(
+                commit_payload, 
+                open_ai_configuration
+            ).await?;
+
+            let message = &payload["choices"][0]["message"]["content"];
+
+            Ok(message.to_string())
+        } // _ => { unreachable!("AI not found!") },
+    }
+}
+
+pub async fn generate_pull_request(
+    configuration: &super::Configuration,
+    tickets: Vec<Ticket>,
+    commits: Vec<String>,
 ) -> Result<serde_json::Value, reqwest::Error> {
     match &configuration.ai {
         AIConfiguration::OpenAI(open_ai_configuration) => {
-            let message = open_ai::generate_message(
-                MessagePayload {
-                    ticket,
-                    diff,
-                    instructions: configuration.instructions.clone(),
-                },
-                open_ai_configuration,
-            )
-            .await?;
+            let commit_payload = open_ai::get_prompt_for_pull_request(
+                commits,
+                tickets,
+                configuration.instructions.pr.clone(),
+            );
+
+            let message = open_ai::generate_message(commit_payload, open_ai_configuration).await?;
 
             Ok(message)
-        }
-        // _ => { unreachable!("AI not found!") },
+        } // _ => { unreachable!("AI not found!") },
     }
 }
